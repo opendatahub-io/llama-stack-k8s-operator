@@ -26,7 +26,9 @@ import (
 
 // LlamaStackDistributionSpec defines the desired state of LlamaStackDistribution
 type LlamaStackDistributionSpec struct {
-	Replicas *int32         `json:"replicas,omitempty"`
+	// +kubebuilder:default:=1
+	Replicas int32 `json:"replicas,omitempty"`
+	// +kubebuilder:default:="llamastack/distribution-ollama:latest"
 	Image    string         `json:"image"`
 	Template corev1.PodSpec `json:"template,omitempty"`
 }
@@ -39,7 +41,6 @@ type LlamaStackDistributionStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:printcolumn:name="Distribution",type="string",JSONPath=".status.distribution"
 //+kubebuilder:printcolumn:name="Image",type="string",JSONPath=".status.image"
 //+kubebuilder:printcolumn:name="Ready",type="boolean",JSONPath=".status.ready"
 // LlamaStackDistribution is the Schema for the llamastackdistributions API
