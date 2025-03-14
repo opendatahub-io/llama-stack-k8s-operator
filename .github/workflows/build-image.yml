@@ -32,7 +32,7 @@ jobs:
       - name: Build and push PR image
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
-          make docker-build docker-push -e IMG=ghcr.io/opendatahub-io/llama-stack-k8s-operator:pr-${PR_NUMBER}
+          make docker-build docker-push -e IMG=ghcr.io/opendatahub-io/llama-stack-k8s-operator:pr-${{ env.PR_NUMBER }}
 
   build-latest-image:
     if: github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
