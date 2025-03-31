@@ -41,6 +41,10 @@ spec:
         image: controller:latest
         env:
           # Env vars are prioritized over --config
+          - name: OPERATOR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
           - name: OLLAMA_IMAGE
             value: $(OLLAMA_IMAGE)
           - name: VLLM_IMAGE

@@ -30,11 +30,13 @@ import (
 	"github.com/meta-llama/llama-stack-k8s-operator/pkg/deploy"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -82,6 +84,11 @@ func (r *LlamaStackDistributionReconciler) Reconcile(ctx context.Context, req ct
 		return ctrl.Result{}, fmt.Errorf("failed to fetch LlamaStackDistribution: %w", err)
 	}
 
+	// Reconcile the NetworkPolicy
+	if err := r.reconcileNetworkPolicy(ctx, instance); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to reconcile NetworkPolicy: %w", err)
+	}
+
 	// Reconcile the Deployment
 	if err := r.reconcileDeployment(ctx, instance); err != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile Deployment: %w", err)
@@ -109,6 +116,7 @@ func (r *LlamaStackDistributionReconciler) SetupWithManager(mgr ctrl.Manager) er
 		For(&llamav1alpha1.LlamaStackDistribution{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
+		Owns(&networkingv1.NetworkPolicy{}).
 		Complete(r)
 }
 
@@ -305,6 +313,108 @@ func (r *LlamaStackDistributionReconciler) updateStatus(ctx context.Context, ins
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 	return nil
+}
+
+// reconcileNetworkPolicy manages the NetworkPolicy for the LlamaStack server.
+func (r *LlamaStackDistributionReconciler) reconcileNetworkPolicy(ctx context.Context, instance *llamav1alpha1.LlamaStackDistribution) error {
+	// Use the container's port (defaulted to 8321 if unset)
+	port := instance.Spec.Server.ContainerSpec.Port
+	if port == 0 {
+		port = defaultPort
+	}
+
+	// get operator namespace
+	operatorNamespace, err := deploy.GetOperatorNamespace()
+	if err != nil {
+		return fmt.Errorf("failed to get operator namespace: %w", err)
+	}
+
+	networkPolicy := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      instance.Name + "-network-policy",
+			Namespace: instance.Namespace,
+		},
+		Spec: networkingv1.NetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					defaultLabelKey: defaultLabelValue,
+				},
+			},
+			PolicyTypes: []networkingv1.PolicyType{
+				networkingv1.PolicyTypeIngress,
+				networkingv1.PolicyTypeEgress,
+			},
+			Ingress: []networkingv1.NetworkPolicyIngressRule{
+				{
+					From: []networkingv1.NetworkPolicyPeer{
+						{
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"name": instance.Namespace,
+								},
+							},
+						},
+						{
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"name": operatorNamespace, // Allow requests from operator namespace
+								},
+							},
+						},
+					},
+					Ports: []networkingv1.NetworkPolicyPort{
+						{
+							Protocol: (*corev1.Protocol)(ptr.To("TCP")),
+							Port: &intstr.IntOrString{
+								IntVal: port,
+							},
+						},
+					},
+				},
+				{
+					From: []networkingv1.NetworkPolicyPeer{
+						{
+							PodSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"app.kubernetes.io/part-of": defaultContainerName,
+								},
+							},
+						},
+					},
+					Ports: []networkingv1.NetworkPolicyPort{
+						{
+							Protocol: (*corev1.Protocol)(ptr.To("TCP")),
+							Port: &intstr.IntOrString{
+								IntVal: port,
+							},
+						},
+					},
+				},
+			},
+			Egress: []networkingv1.NetworkPolicyEgressRule{
+				{
+					To: []networkingv1.NetworkPolicyPeer{
+						{
+							PodSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"app.kubernetes.io/part-of": defaultContainerName,
+								},
+							},
+						},
+						{
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"name": operatorNamespace, // Allow requests to operator namespace
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return deploy.ApplyNetworkPolicy(ctx, r.Client, r.Scheme, instance, networkPolicy, r.Log)
 }
 
 // NewLlamaStackDistributionReconciler creates a new reconciler with default image mappings.

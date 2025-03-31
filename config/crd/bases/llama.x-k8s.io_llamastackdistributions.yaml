@@ -1911,18 +1911,18 @@ spec:
             properties:
               distributionConfig:
                 description: DistributionConfig represents the configuration information
-                  from the providers endpoint
+                  from the providers endpoint.
                 properties:
                   providers:
                     items:
                       description: ProviderInfo represents a single provider from
-                        the providers endpoint
+                        the providers endpoint.
                       properties:
                         api:
                           type: string
                         config:
                           description: ProviderConfig represents the configuration
-                            for a provider
+                            for a provider.
                           properties:
                             api_key:
                               type: string
@@ -1934,7 +1934,7 @@ spec:
                               type: array
                             kvstore:
                               description: KVStoreConfig represents the configuration
-                                for key-value stores
+                                for key-value stores.
                               properties:
                                 db_path:
                                   type: string
@@ -1949,7 +1949,7 @@ spec:
                               type: string
                             persistence_store:
                               description: KVStoreConfig represents the configuration
-                                for key-value stores
+                                for key-value stores.
                               properties:
                                 db_path:
                                   type: string
