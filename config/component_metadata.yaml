@@ -1,0 +1,7 @@
+releases:
+  - name: Llama Stack
+    version: latest
+    repoUrl: https://github.com/opendatahub-io/llama-stack
+  - name: Open Data Hub Llama Stack Operator
+    version: latest
+    repoUrl: https://github.com/opendatahub-io/llama-stack-k8s-operator
