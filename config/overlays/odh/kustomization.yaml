@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: opendatahub
+
+resources:
+  - ../../default
+
+patches:
+  # patch to remove default `system` namespace in ../../manager/manager.yaml
+  - path: delete-namespace.yaml
+  # patch to remove data but inject llama-stack image into distribution-configmap
+  - target:
+      kind: ConfigMap
+      name: llama-stack-k8s-operator-distribution-images
+    patch: |-
+      - op: replace
+        path: /data
+        value:
+          rh-dev: quay.io/opendatahub/llama-stack:latest
+
+configMapGenerator:
+  - name: params
+    envs:
+      - params.env
+
+replacements:
+  - source:
+      kind: ConfigMap
+      name: params
+      fieldPath: data.RELATED_IMAGE_ODH_LLAMASTACK_OPERATOR
+    targets:
+      - select:
+          kind: Deployment
+          name: controller-manager
+        fieldPaths:
+          - spec.template.spec.containers.[name=manager].image
