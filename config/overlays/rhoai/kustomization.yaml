@@ -9,21 +9,24 @@ resources:
 patches:
   # patch to remove default `system` namespace in ../../manager/manager.yaml
   - path: delete-namespace.yaml
+  - target:
+      kind: ConfigMap
+      name: llama-stack-k8s-operator-distribution-images
+    patch: |-
+      - op: replace
+        path: /data
+        value:
+          rh-dev: quay.io/opendatahub/llama-stack:latest
 
 configMapGenerator:
-  - name:  lls-parameters
-    behavior: merge
+  - name: params
     envs:
       - params.env
-
-configurations:
-  - params.yaml
 
 replacements:
   - source:
       kind: ConfigMap
-      name: lls-parameters
-      version: v1
+      name: params
       fieldPath: data.RELATED_IMAGE_ODH_LLAMASTACK_OPERATOR
     targets:
       - select:
