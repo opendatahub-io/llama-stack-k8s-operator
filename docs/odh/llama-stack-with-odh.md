@@ -100,7 +100,7 @@ spec:
     containerSpec:
       env:
         - name: VLLM_URL
-          value: 'https://llama32-3b.llamastack.svc.cluster.local/v1'
+          value: 'https://llama32-3b-instruct.llamastack.svc.cluster.local/v1'
         - name: INFERENCE_MODEL
           value: llama32-3b
         - name: MILVUS_DB_PATH
