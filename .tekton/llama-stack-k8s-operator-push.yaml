@@ -23,7 +23,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/opendatahub/llama-stack-k8s-operator:odh
+    value: quay.io/opendatahub/llama-stack-k8s-operator:odh-stable
   - name: dockerfile
     value: Dockerfile
   - name: path-context
