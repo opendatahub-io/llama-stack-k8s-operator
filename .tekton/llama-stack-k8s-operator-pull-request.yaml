@@ -24,15 +24,13 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/opendatahub/llama-stack-k8s-operator:{{revision}}
+    value: quay.io/opendatahub/llama-stack-k8s-operator:odh-pr
   - name: dockerfile
     value: Dockerfile
   - name: path-context
     value: .
   - name: additional-tags
     value:
-    - '{{target_branch}}-{{revision}}'
-    - 'odh-pr' 
     - 'odh-pr-{{revision}}'
   - name: pipeline-type
     value: pull-request
