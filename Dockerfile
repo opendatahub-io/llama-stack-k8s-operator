@@ -7,6 +7,7 @@ ARG TARGETARCH
 ARG CGO_ENABLED=1
 ARG GOTAGS=strictfipsruntime,openssl
 ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTOOLCHAIN=auto
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
